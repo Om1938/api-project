@@ -52,6 +52,13 @@ same numbers). Text uses ink tokens, never series colours. Segments of a bar are
 2px gap of bare surface rather than an outline, and only the top segment is rounded. The series
 order in `index.css` is what makes neighbouring colours distinguishable, so it must not be reordered.
 
+**Where the charts live.** The overview shows the headline numbers, requests over time, the outcome
+split and the success rate. Everything else is grouped under an *Analytics* section in the side
+menu, each group on its own route: Traffic, Performance, By consumer and Credits for owners
+(`/owner/analytics/...`); Traffic, Performance and Spending for consumers. The range, resolution and
+API filters are held in one context above the routes, so they stay as chosen while moving between
+pages. All pages read the same report, so the cache is shared and switching pages does not refetch.
+
 **What is charted, and why that form.** One usage report drives every chart, so the range filter
 scopes all of them at once.
 

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { errorMessage } from '../../api/client'
 import { Button } from '../../components/Button'
@@ -7,9 +6,9 @@ import { Card, Code, PageHeader, Section, StatCard } from '../../components/Disp
 import { EmptyState, ErrorNote, QueryView } from '../../components/Feedback'
 import { formatCredits, formatDateTime } from '../../lib/format'
 import { API_KEY_HEADER, gatewayUrl } from '../../lib/gateway'
-import { useMyUsage } from '../analytics/queries'
-import { DEFAULT_RANGE } from '../analytics/range'
-import { RangeSelect, UsageReport } from '../analytics/UsageReport'
+import { FilterBar } from '../analytics/AnalyticsFilters'
+import { useUsageData } from '../analytics/queries'
+import { OverviewView } from '../analytics/views'
 import { MyKeysTable } from '../keys/MyKeysTable'
 import { useMyKeys } from '../keys/queries'
 import { useCreditAccount, useTopUp } from './queries'
@@ -17,18 +16,14 @@ import { useCreditAccount, useTopUp } from './queries'
 const TOP_UP_AMOUNTS = [50, 100, 500]
 
 export function ConsumerDashboardPage() {
-  const [range, setRange] = useState(DEFAULT_RANGE)
-  const usage = useMyUsage(range)
+  const usage = useUsageData('consumer')
   const credits = useCreditAccount()
   const keys = useMyKeys()
 
   return (
     <>
       <PageHeader title="Overview" description="Your usage, remaining quota and credits. Refreshes every few seconds." />
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <RangeSelect value={range} onChange={setRange} />
-      </div>
+      <FilterBar />
 
       <QueryView query={credits}>
         {(account) => (
@@ -39,7 +34,7 @@ export function ConsumerDashboardPage() {
         )}
       </QueryView>
 
-      <QueryView query={usage}>{(report) => <UsageReport report={report} creditsLabel="Credits spent" />}</QueryView>
+      <QueryView query={usage}>{(data) => <OverviewView data={data} audience="consumer" />}</QueryView>
 
       <Section title="Quota per key" actions={<Link to="keys" className="text-sm text-accent hover:underline">All keys</Link>}>
         <QueryView query={keys}>{(rows) => <MyKeysTable keys={rows} />}</QueryView>

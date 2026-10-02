@@ -46,6 +46,19 @@ public class GatewayFlowTests(GatewayAppFixture fixture)
         Assert.Equal(4, breakdown.Heatmap.Sum(c => c.Requests));
         Assert.True(analytics.Report.AverageLatencyMs >= 0);
 
+        var lastHalfHour = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(-30).ToString("O"));
+        var perMinute = await scenario.Owner.GetAsync<OwnerAnalyticsDto>(
+            $"/api/analytics?apiId={scenario.Api.Id}&from={lastHalfHour}&bucketMinutes=1");
+        Assert.Equal(1, perMinute.Report.BucketMinutes);
+        Assert.InRange(perMinute.Report.Series.Count, 30, 32);
+        Assert.Equal(4, perMinute.Report.Series.Sum(point => point.Usage.TotalRequests));
+        Assert.InRange(perMinute.Report.Series.Count(point => point.Usage.TotalRequests > 0), 1, 2);
+
+        var perFiveMinutes = await scenario.Owner.GetAsync<OwnerAnalyticsDto>(
+            $"/api/analytics?apiId={scenario.Api.Id}&bucketMinutes=5");
+        Assert.Equal(5, perFiveMinutes.Report.BucketMinutes);
+        Assert.Equal(4, perFiveMinutes.Report.Series.Sum(point => point.Usage.TotalRequests));
+
         var consumerUsage = Assert.Single(analytics.Consumers);
         Assert.Equal(scenario.ConsumerEmail, consumerUsage.Email);
         Assert.Equal(3, consumerUsage.Usage.Successful);

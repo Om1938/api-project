@@ -3,6 +3,7 @@ import type { UsageReportDto } from '../../api/types'
 import { formatBucket, formatBucketLong, formatCompact, formatNumber } from '../../lib/format'
 import { axisTick } from './chartTheme'
 import { ChartCard, SeriesLegend, TooltipBox, TooltipValue } from './ChartCard'
+import { bucketUnit } from './range'
 import { toChartRows, USAGE_SERIES, type ChartRow, type SeriesKey } from './series'
 
 const SEGMENT_GAP = 2
@@ -33,7 +34,7 @@ function segmentShape(series: SeriesKey) {
 
 export function UsageChart({ report }: { report: UsageReportDto }) {
   const rows = toChartRows(report.series)
-  const bucketLabel = report.bucketMinutes < 1440 ? 'hour' : 'day'
+  const bucketLabel = bucketUnit(report.bucketMinutes)
 
   return (
     <ChartCard
@@ -44,7 +45,7 @@ export function UsageChart({ report }: { report: UsageReportDto }) {
         rows: rows.filter((row) => row.total > 0),
         rowKey: (row) => row.bucketStart,
         columns: [
-          { header: bucketLabel === 'hour' ? 'Hour' : 'Day', cell: (row) => formatBucketLong(row.bucketStart, report.bucketMinutes) },
+          { header: report.bucketMinutes < 1440 ? 'Time' : 'Day', cell: (row) => formatBucketLong(row.bucketStart, report.bucketMinutes) },
           ...USAGE_SERIES.map((series) => ({
             header: series.label,
             numeric: true,

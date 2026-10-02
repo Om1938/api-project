@@ -22,8 +22,14 @@ consumed, and a time series; for an owner across their APIs, for a consumer acro
   `/users/{id}`; numbers, GUIDs and long hex strings count as identifiers), so one route does not
   appear as hundreds of rows. Only the top 8 are returned.
 - **Latency buckets** are fixed: under 25, 25-50, 50-100, 100-250, 250-500, 500-1000 and 1000+ ms.
-- **Ranges:** default last 24 hours, at most 92 days. Up to 48 hours the series is hourly, beyond that
-  daily. Buckets are UTC; the frontend formats them in the viewer's time zone.
+- **Ranges and resolution:** default last 24 hours, at most 92 days. The series can be bucketed per
+  1, 5 or 30 minutes, per hour or per day (`bucketMinutes`). Left out, the size follows the range:
+  minutes for the last hour, 5 minutes up to about 8 hours, hourly up to 48 hours, daily beyond.
+  A series never has more than 400 points; a finer size than the range can carry is coarsened to
+  the next one that fits rather than refused. Buckets are aligned to the UTC clock; the frontend
+  formats them in the viewer's time zone.
+- Sub-hourly reports group by minute in SQL (`MINUTE(ts) DIV step * step`); hourly and daily ones
+  keep grouping by hour, so a 30-day report does not produce tens of thousands of groups.
 - The series always contains every bucket in the range, including empty ones, so charts do not need
   to fill gaps.
 - Three composite indexes match the three filters: `(ApiId, Timestamp)`, `(ConsumerId, Timestamp)`,

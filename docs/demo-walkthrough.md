@@ -74,6 +74,9 @@ consumer that runs out of credits is topped up automatically. `--help` lists the
    ```
 
    The first five print `200`, the rest `429`. Add `-i` to see `Retry-After` and the `X-RateLimit-*` headers.
+   Use the *Analytics* pages in the side menu for the detail, and the two selectors at the top to
+   change the time range (last hour to 30 days) and the resolution (per minute up to per day). To
+   watch requests arrive live, pick *Last hour* and *Per 1 minute*.
    The dashboards show more than totals: outcome share, success rate, latency over time and its
    distribution, a day-by-hour heatmap, top endpoints, status codes, methods, and usage per API, tier
    and consumer. Let `./scripts/traffic.py --forever` run for a while to fill them.

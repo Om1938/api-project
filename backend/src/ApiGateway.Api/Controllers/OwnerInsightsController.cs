@@ -14,13 +14,15 @@ public sealed class OwnerInsightsController(AnalyticsService analytics, Consumer
     /// <param name="apiId">Narrow the report to one API.</param>
     /// <param name="from">Start of the range (ISO 8601). Defaults to 24 hours before <paramref name="to"/>.</param>
     /// <param name="to">End of the range (ISO 8601). Defaults to now.</param>
+    /// <param name="bucketMinutes">Width of each point in the series: 1, 5, 30, 60 or 1440. Chosen automatically when omitted, and coarsened if the range would need more than 400 points.</param>
     [HttpGet("analytics")]
     public async Task<ActionResult<OwnerAnalyticsDto>> Analytics(
         [FromQuery] Guid? apiId,
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
+        [FromQuery] int? bucketMinutes,
         CancellationToken cancellationToken) =>
-        Ok(await analytics.GetAsync(apiId, from, to, cancellationToken));
+        Ok(await analytics.GetAsync(apiId, from, to, bucketMinutes, cancellationToken));
 
     /// <summary>Consumer accounts that can be given a key, with how many active keys each holds on the owner's APIs.</summary>
     [HttpGet("consumers")]

@@ -67,10 +67,11 @@ public sealed class ConsumerPortalService(
     public async Task<Result<UsageReportDto>> GetUsageAsync(
         DateTimeOffset? from,
         DateTimeOffset? to,
+        int? bucketMinutes,
         CancellationToken cancellationToken)
     {
         var scope = db.UsageRecords.Where(r => r.ConsumerId == currentUser.UserId);
-        var range = ReportRange.Resolve(from, to, timeProvider.GetUtcNow());
+        var range = ReportRange.Resolve(from, to, timeProvider.GetUtcNow(), bucketMinutes);
 
         return await aggregator.BuildReportAsync(scope, range, cancellationToken);
     }

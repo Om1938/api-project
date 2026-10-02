@@ -11,12 +11,16 @@ public sealed class UsageAggregator(IAppDbContext db, UsageBreakdownBuilder brea
         ReportRange range,
         CancellationToken cancellationToken)
     {
+        // whole hours unless the report is finer than that; 60 folds every minute into :00
+        var minuteStep = range.IsSubHourly ? (int)range.Bucket.TotalMinutes : 60;
+
         var rows = await InRange(scope, range)
-            .GroupBy(r => new { Day = r.Timestamp.Date, r.Timestamp.Hour, r.Outcome })
+            .GroupBy(r => new { Day = r.Timestamp.Date, r.Timestamp.Hour, Minute = r.Timestamp.Minute / minuteStep * minuteStep, r.Outcome })
             .Select(g => new
             {
                 g.Key.Day,
                 g.Key.Hour,
+                g.Key.Minute,
                 g.Key.Outcome,
                 Count = g.LongCount(),
                 Credits = g.Sum(r => r.CreditsCharged),
@@ -33,7 +37,7 @@ public sealed class UsageAggregator(IAppDbContext db, UsageBreakdownBuilder brea
         {
             overall.Add(row.Outcome, row.Count, row.Credits, row.Latency);
 
-            var bucket = range.BucketOf(row.Day.AddHours(row.Hour));
+            var bucket = range.BucketOf(row.Day.AddHours(row.Hour).AddMinutes(row.Minute));
             if (buckets.TryGetValue(bucket, out var tally))
             {
                 tally.Add(row.Outcome, row.Count, row.Credits, row.Latency);

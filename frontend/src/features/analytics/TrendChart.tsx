@@ -27,7 +27,7 @@ export function TrendChart({ title, hint, points, bucketMinutes, valueLabel, for
         rows: measured,
         rowKey: (point) => point.bucketStart,
         columns: [
-          { header: bucketMinutes < 1440 ? 'Hour' : 'Day', cell: (point) => formatBucketLong(point.bucketStart, bucketMinutes) },
+          { header: bucketMinutes < 1440 ? 'Time' : 'Day', cell: (point) => formatBucketLong(point.bucketStart, bucketMinutes) },
           { header: valueLabel, numeric: true, cell: (point) => format(point.value) },
         ],
       }}

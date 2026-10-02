@@ -14,6 +14,7 @@ public sealed class AnalyticsService(
         Guid? apiId,
         DateTimeOffset? from,
         DateTimeOffset? to,
+        int? bucketMinutes,
         CancellationToken cancellationToken)
     {
         if (apiId is not null)
@@ -32,7 +33,7 @@ public sealed class AnalyticsService(
             scope = scope.Where(r => r.ApiId == apiId);
         }
 
-        var range = ReportRange.Resolve(from, to, timeProvider.GetUtcNow());
+        var range = ReportRange.Resolve(from, to, timeProvider.GetUtcNow(), bucketMinutes);
         var report = await aggregator.BuildReportAsync(scope, range, cancellationToken);
         var consumers = await aggregator.BuildConsumerBreakdownAsync(scope, range, cancellationToken);
 

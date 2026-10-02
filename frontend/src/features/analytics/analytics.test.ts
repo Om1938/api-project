@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { UsagePointDto, UsageSummaryDto } from '../../api/types'
-import { rangeStart } from './range'
+import { bucketOptions, rangeStart } from './range'
 import { latencyTrend, successRate, successRateTrend, toChartRows } from './series'
 
 const usage = (overrides: Partial<UsageSummaryDto>): UsageSummaryDto => ({
@@ -43,6 +43,7 @@ describe('rangeStart', () => {
   const now = new Date('2026-03-15T10:30:00Z')
 
   it.each([
+    ['1h', '2026-03-15T09:30:00.000Z'],
     ['24h', '2026-03-14T10:30:00.000Z'],
     ['7d', '2026-03-08T10:30:00.000Z'],
     ['30d', '2026-02-13T10:30:00.000Z'],
@@ -65,5 +66,17 @@ describe('success rate', () => {
 describe('latencyTrend', () => {
   it('leaves a gap for periods without forwarded requests', () => {
     expect(latencyTrend([point({ rateLimited: 4 }), point({ failed: 1 })]).map((p) => p.value)).toEqual([null, 40])
+  })
+})
+
+describe('bucketOptions', () => {
+  it.each([
+    ['1h', [1, 5, 30]],
+    ['6h', [1, 5, 30, 60]],
+    ['24h', [5, 30, 60]],
+    ['7d', [30, 60, 1440]],
+    ['30d', [1440]],
+  ] as const)('%s offers %j minutes', (preset, expected) => {
+    expect(bucketOptions(preset).map((option) => option.minutes)).toEqual(expected)
   })
 })

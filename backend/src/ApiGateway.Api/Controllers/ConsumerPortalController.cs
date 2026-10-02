@@ -19,12 +19,14 @@ public sealed class ConsumerPortalController(ConsumerPortalService portal, Credi
     /// <summary>The consumer's own usage: totals by outcome and a time series.</summary>
     /// <param name="from">Start of the range (ISO 8601). Defaults to 24 hours before <paramref name="to"/>.</param>
     /// <param name="to">End of the range (ISO 8601). Defaults to now.</param>
+    /// <param name="bucketMinutes">Width of each point in the series: 1, 5, 30, 60 or 1440. Chosen automatically when omitted, and coarsened if the range would need more than 400 points.</param>
     [HttpGet("usage")]
     public async Task<ActionResult<UsageReportDto>> Usage(
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
+        [FromQuery] int? bucketMinutes,
         CancellationToken cancellationToken) =>
-        Ok(await portal.GetUsageAsync(from, to, cancellationToken));
+        Ok(await portal.GetUsageAsync(from, to, bucketMinutes, cancellationToken));
 
     /// <summary>Credit balance, credits spent this month and recent top-ups.</summary>
     [HttpGet("credits")]

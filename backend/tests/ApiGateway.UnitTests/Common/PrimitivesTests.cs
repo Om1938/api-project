@@ -140,6 +140,9 @@ public class ReportRangeTests
 {
     private static readonly DateTimeOffset Now = new(2026, 3, 15, 10, 30, 0, TimeSpan.Zero);
 
+    private static int BucketMinutes(TimeSpan span, int? requested = null) =>
+        (int)ReportRange.Resolve(Now - span, Now, Now, requested).Bucket.TotalMinutes;
+
     [Fact]
     public void Defaults_to_the_last_24_hours_in_hourly_buckets()
     {
@@ -147,8 +150,51 @@ public class ReportRangeTests
 
         Assert.Equal(Now.UtcDateTime.AddHours(-24), range.From);
         Assert.Equal(Now.UtcDateTime, range.To);
-        Assert.True(range.IsHourly);
+        Assert.Equal(TimeSpan.FromHours(1), range.Bucket);
         Assert.Equal(25, range.Buckets().Count());
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(6, 5)]
+    [InlineData(24, 60)]
+    [InlineData(24 * 7, 1440)]
+    public void Picks_a_bucket_that_suits_the_range_when_none_is_asked_for(int hours, int expectedMinutes)
+    {
+        Assert.Equal(expectedMinutes, BucketMinutes(TimeSpan.FromHours(hours)));
+    }
+
+    [Theory]
+    [InlineData(1, 1, 1)]
+    [InlineData(6, 1, 1)]
+    [InlineData(24, 5, 5)]
+    [InlineData(24, 30, 30)]
+    [InlineData(24 * 7, 30, 30)]
+    [InlineData(24 * 7, 60, 60)]
+    public void Honours_a_requested_bucket_the_range_can_carry(int hours, int requested, int expected)
+    {
+        Assert.Equal(expected, BucketMinutes(TimeSpan.FromHours(hours), requested));
+    }
+
+    [Theory]
+    [InlineData(24, 1, 5)]          // 1440 one-minute points is too many
+    [InlineData(24 * 7, 5, 30)]
+    [InlineData(24 * 30, 1, 1440)]
+    [InlineData(24, 7, 60)]         // not an offered size: fall back to automatic
+    public void Coarsens_or_ignores_a_bucket_the_range_cannot_carry(int hours, int requested, int expected)
+    {
+        Assert.Equal(expected, BucketMinutes(TimeSpan.FromHours(hours), requested));
+    }
+
+    [Fact]
+    public void Buckets_are_aligned_to_the_clock()
+    {
+        var at = new DateTime(2026, 3, 15, 10, 37, 42, DateTimeKind.Utc);
+
+        Assert.Equal(new DateTime(2026, 3, 15, 10, 35, 0, DateTimeKind.Utc), ReportRange.Resolve(Now.AddHours(-6), Now, Now, 5).BucketOf(at));
+        Assert.Equal(new DateTime(2026, 3, 15, 10, 30, 0, DateTimeKind.Utc), ReportRange.Resolve(Now.AddHours(-6), Now, Now, 30).BucketOf(at));
+        Assert.Equal(new DateTime(2026, 3, 15, 10, 0, 0, DateTimeKind.Utc), ReportRange.Resolve(Now.AddHours(-24), Now, Now).BucketOf(at));
+        Assert.Equal(new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc), ReportRange.Resolve(Now.AddDays(-7), Now, Now).BucketOf(at));
     }
 
     [Fact]
@@ -156,9 +202,7 @@ public class ReportRangeTests
     {
         var range = ReportRange.Resolve(Now.AddDays(-7), Now, Now);
 
-        Assert.False(range.IsHourly);
         Assert.Equal(8, range.Buckets().Count());
-        Assert.Equal(new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc), range.BucketOf(Now.UtcDateTime));
     }
 
     [Fact]

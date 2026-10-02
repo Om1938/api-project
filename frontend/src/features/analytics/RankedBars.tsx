@@ -1,16 +1,17 @@
-import type { CountDto } from '../../api/types'
 import { formatNumber } from '../../lib/format'
 import { ChartCard } from './ChartCard'
+import type { RankedItem } from './series'
 
 type Props = {
   title: string
   hint?: string
-  items: CountDto[]
+  items: RankedItem[]
   mono?: boolean
+  format?: (value: number) => string
 }
 
-export function RankedBars({ title, hint, items, mono = false }: Props) {
-  const max = Math.max(1, ...items.map((item) => item.requests))
+export function RankedBars({ title, hint, items, mono = false, format = formatNumber }: Props) {
+  const max = Math.max(1, ...items.map((item) => item.value))
 
   return (
     <ChartCard title={title} hint={hint} isEmpty={items.length === 0}>
@@ -21,12 +22,9 @@ export function RankedBars({ title, hint, items, mono = false }: Props) {
               {item.label}
             </span>
             <span className="h-2.5">
-              <span
-                className="block h-full min-w-0.5 rounded-r bg-(--series-1)"
-                style={{ width: `${(item.requests / max) * 100}%` }}
-              />
+              <span className="block h-full min-w-0.5 rounded-r bg-(--series-1)" style={{ width: `${(item.value / max) * 100}%` }} />
             </span>
-            <span className="text-ink-2 tabular-nums">{formatNumber(item.requests)}</span>
+            <span className="text-ink-2 tabular-nums">{format(item.value)}</span>
           </li>
         ))}
       </ul>

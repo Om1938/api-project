@@ -1,4 +1,4 @@
-import type { UsagePointDto, UsageSummaryDto } from '../../api/types'
+import type { CountDto, UsagePointDto, UsageSummaryDto } from '../../api/types'
 
 export const USAGE_SERIES = [
   { key: 'successful', label: 'Successful', color: 'var(--series-1)' },
@@ -50,3 +50,8 @@ export const latencyTrend = (series: UsagePointDto[]): TrendPoint[] =>
 
 export const creditsTrend = (series: UsagePointDto[]): TrendPoint[] =>
   series.map((point) => ({ bucketStart: point.bucketStart, value: point.usage.creditsConsumed }))
+
+export type RankedItem = { label: string; value: number }
+
+export const byRequests = (counts: CountDto[]): RankedItem[] =>
+  counts.map((count) => ({ label: count.label, value: count.requests }))

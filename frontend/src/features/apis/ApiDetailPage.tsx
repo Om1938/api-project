@@ -5,7 +5,7 @@ import { Button } from '../../components/Button'
 import { Code, CopyButton, PageHeader } from '../../components/Display'
 import { QueryView } from '../../components/Feedback'
 import { gatewayUrl } from '../../lib/gateway'
-import { OwnerAnalytics } from '../analytics/OwnerDashboardPage'
+import { ApiUsage } from '../analytics/AnalyticsPage'
 import { KeysTab } from '../keys/KeysTab'
 import { TiersTab } from '../tiers/TiersTab'
 import { WebhooksTab } from '../webhooks/WebhooksTab'
@@ -17,7 +17,7 @@ const TABS = [
   { id: 'tiers', label: 'Tiers', render: (api: ApiDto) => <TiersTab apiId={api.id} /> },
   { id: 'keys', label: 'API keys', render: (api: ApiDto) => <KeysTab api={api} /> },
   { id: 'webhooks', label: 'Webhooks', render: (api: ApiDto) => <WebhooksTab apiId={api.id} /> },
-  { id: 'usage', label: 'Usage', render: (api: ApiDto) => <OwnerAnalytics apiId={api.id} /> },
+  { id: 'usage', label: 'Usage', render: (api: ApiDto) => <ApiUsage apiId={api.id} /> },
 ] as const
 
 export function ApiDetailPage() {
