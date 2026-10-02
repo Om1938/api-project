@@ -1,0 +1,65 @@
+# Runs the published images from GHCR instead of building locally.
+#   cp .env.ghcr.example .env.ghcr   (and fill it in)
+#   docker compose -f docker-compose.ghcr.yml --env-file .env.ghcr up -d
+name: api-project
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-apigateway}
+      MYSQL_USER: ${MYSQL_USER:-gateway}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # only used by the seeded demo API
+  upstream:
+    image: mccutchen/go-httpbin:latest
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/om1938/api-project-backend:${IMAGE_TAG:-latest}
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__MySql: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-apigateway};User=${MYSQL_USER:-gateway};Password=${MYSQL_PASSWORD};"
+      ConnectionStrings__Redis: "redis:6379"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY (32+ characters)}
+      Seed__Enabled: ${SEED_DEMO_DATA:-false}
+      Seed__SampleHistoryDays: ${SEED_HISTORY_DAYS:-21}
+      Seed__Password: ${SEED_PASSWORD:-Password123!}
+      Seed__UpstreamUrl: "http://upstream:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/om1938/api-project-frontend:${IMAGE_TAG:-latest}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

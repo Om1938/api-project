@@ -1,0 +1,68 @@
+name: api-gateway
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-apigateway}
+      MYSQL_USER: ${MYSQL_USER:-gateway}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gateway}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # demo upstream
+  upstream:
+    image: mccutchen/go-httpbin:latest
+    ports:
+      - "${UPSTREAM_PORT:-8081}:8080"
+
+  backend:
+    build: ./backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__MySql: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-apigateway};User=${MYSQL_USER:-gateway};Password=${MYSQL_PASSWORD:-gateway};"
+      ConnectionStrings__Redis: "redis:6379"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-demo-only-signing-key-change-me-0123456789abcdef}
+      Seed__Enabled: ${SEED_DEMO_DATA:-true}
+      Seed__SampleHistoryDays: ${SEED_HISTORY_DAYS:-21}
+      Seed__UpstreamUrl: "http://upstream:8080"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      upstream:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

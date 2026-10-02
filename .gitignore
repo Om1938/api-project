@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Env / IDE
+.env
+.idea/
+.vscode/
+.DS_Store
+
+# scripts
+scripts/.traffic-state.json
+.env.ghcr
